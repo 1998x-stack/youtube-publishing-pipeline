@@ -6,6 +6,8 @@ from typing import Any, Iterable, Protocol
 
 
 class AssetStore(Protocol):
+    source_type: str
+
     def discover(self) -> Iterable[tuple[str, dict[str, Any]]]:
         """Return (stable asset_key, manifest JSON) pairs."""
 
@@ -22,6 +24,6 @@ class Publisher(Protocol):
         self, video_id: str, manifest: dict[str, Any], files: dict[str, Path]
     ) -> None: ...
 
-    def set_schedule(self, video_id: str, publish_at_utc: str) -> None: ...
+    def set_schedule(self, video_id: str, publish_at_utc: str, manifest: dict[str, Any]) -> None: ...
 
     def privacy_status(self, video_id: str) -> str: ...

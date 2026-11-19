@@ -95,7 +95,7 @@ class YouTubePublisher:
                 ),
             ).execute()
 
-    def set_schedule(self, video_id: str, publish_at_utc: str) -> None:
+    def set_schedule(self, video_id: str, publish_at_utc: str, manifest: dict[str, Any]) -> None:
         target = datetime.fromisoformat(publish_at_utc.replace("Z", "+00:00"))
         if target.tzinfo is None or target <= datetime.now(timezone.utc):
             raise ValueError("publish_at must be a future UTC timestamp")
@@ -107,6 +107,8 @@ class YouTubePublisher:
                     "privacyStatus": "private",
                     "publishAt": target.astimezone(timezone.utc)
                     .isoformat().replace("+00:00", "Z"),
+                    "selfDeclaredMadeForKids": manifest["made_for_kids"],
+                    "containsSyntheticMedia": manifest["contains_synthetic_media"],
                 },
             },
         ).execute()

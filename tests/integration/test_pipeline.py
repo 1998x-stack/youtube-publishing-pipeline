@@ -30,7 +30,8 @@ class FakePublisher:
         assert files["captions.srt"].is_file()
         self.decorated = True
 
-    def set_schedule(self, video_id, publish_at_utc):
+    def set_schedule(self, video_id, publish_at_utc, manifest):
+        assert manifest['made_for_kids'] is False
         self.scheduled = publish_at_utc
 
     def privacy_status(self, video_id):

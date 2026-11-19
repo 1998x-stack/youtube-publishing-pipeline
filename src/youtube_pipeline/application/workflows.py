@@ -127,7 +127,7 @@ def reconcile(repo: SQLiteRepository, store: AssetStore,
             with tempfile.TemporaryDirectory(prefix="ytp-decorate-") as temp:
                 files = store.materialize(job.asset_key, attachments, Path(temp))
                 publisher.decorate(video_id, job.manifest, files)
-            publisher.set_schedule(video_id, target.isoformat())
+            publisher.set_schedule(video_id, target.isoformat(), job.manifest)
             repo.transition(job.job_id, State.SCHEDULED)
             summary["scheduled"] += 1
         except Exception as exc:
