@@ -6,9 +6,9 @@ import json
 import os
 import socket
 import sys
+import uuid
 
 from youtube_pipeline.adapters.assets.local import LocalAssetStore
-from youtube_pipeline.adapters.persistence.sqlite import SQLiteRepository
 from youtube_pipeline.application.workflows import ingest, reconcile, upload_one
 from youtube_pipeline.domain.models import Manifest
 
@@ -16,6 +16,10 @@ from youtube_pipeline.domain.models import Manifest
 def parser() -> argparse.ArgumentParser:
     p = argparse.ArgumentParser(prog="ytp", description="Drive-to-YouTube publisher")
     p.add_argument("--db", default=os.getenv("YTP_DATABASE", "./workdir/publishing.sqlite3"))
+    p.add_argument("--backend", choices=("sqlite", "firestore"),
+                   default=os.getenv("YTP_BACKEND", "sqlite"))
+    p.add_argument("--firestore-namespace",
+                   default=os.getenv("YTP_FIRESTORE_NAMESPACE", "ytp"))
     p.add_argument("--assets-dir", default=os.getenv("YTP_ASSETS_DIR", "./examples/ready"))
     p.add_argument("--drive-root-id", default=os.getenv("YTP_DRIVE_ROOT_ID"))
     p.add_argument("--channel-alias", default="main")
@@ -50,6 +54,14 @@ def remote_publisher(creds):
     return YouTubePublisher(build("youtube", "v3", credentials=creds, cache_discovery=False))
 
 
+def repository_for(args: argparse.Namespace):
+    if args.backend == "firestore":
+        from youtube_pipeline.adapters.persistence.firestore import FirestoreRepository
+        return FirestoreRepository(namespace=args.firestore_namespace)
+    from youtube_pipeline.adapters.persistence.sqlite import SQLiteRepository
+    return SQLiteRepository(args.db)
+
+
 def main(argv: list[str] | None = None) -> int:
     args = parser().parse_args(argv)
     try:
@@ -58,7 +70,7 @@ def main(argv: list[str] | None = None) -> int:
             credentials(interactive=True)
             print("OAuth token prepared. Keep the token file private.")
             return 0
-        repo = SQLiteRepository(args.db)
+        repo = repository_for(args)
         if args.command == "status":
             for job in repo.list_jobs():
                 print(json.dumps({
@@ -97,7 +109,7 @@ def main(argv: list[str] | None = None) -> int:
         publisher.verify_channel(args.channel_id)
         if args.command == "upload":
             identifier = upload_one(
-                repo, store, publisher, worker_id=f"{socket.gethostname()}:{os.getpid()}",
+                repo, store, publisher, worker_id=f"{socket.gethostname()}:{os.getpid()}:{uuid.uuid4().hex}",
                 channel_alias=args.channel_alias,
             )
             print(json.dumps({"job_id": identifier, "result": "processed" if identifier else "idle"}))

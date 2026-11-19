@@ -1,6 +1,7 @@
 # YouTube Publishing Pipeline
 
-**Status: P0 implementation, not an unattended cloud deployment.**
+**Status: P1 cloud orchestration code and Terraform available; NOT deployed to a
+live Google Cloud project.**
 
 Review-gated pipeline: Colab renders video assets → Google Drive stores each video folder → scanner registers approved manifests → worker uploads privately → reconciler attaches captions/thumbnail, schedules future publication, and checks YouTube status.
 
@@ -44,3 +45,11 @@ Set YTP_DRIVE_ROOT_ID to the folder containing one subfolder per video. Each chi
 CI uses local fake media and a fake publisher. Live OAuth/video processing and real publishing require a separately verified test channel.
 
 Colab handoff script and mounted-Drive instructions: [export guide](docs/colab-export.md).
+
+## P1 cloud worker
+
+Set YTP_BACKEND=firestore and YTP_OAUTH_SECRET_RESOURCE, then run the same CLI
+commands in Cloud Run Jobs. The Terraform stack provisions three job definitions
+and initially **paused** Scheduler triggers. See [cloud deployment](docs/cloud-deployment.md)
+and [P1 verification](docs/p1-verification.md). Cloud resources, OAuth and costs
+require operator approval. Unknown remote uploads remain quarantined.

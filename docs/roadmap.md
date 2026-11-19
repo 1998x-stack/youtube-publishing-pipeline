@@ -15,3 +15,12 @@ Queue inventory, publication calendar, manual review of unknown uploads, channel
 ## P3: additional publisher adapters
 
 Separate ports/adapters for other platforms while retaining common asset and audit contracts.
+
+## P1 delivered in this iteration
+
+Implemented Firestore transactional queue, shared JobRepository port, Secret
+Manager OAuth read access, guarded recovery for stale uploads/decorating,
+Terraform for three Cloud Run Jobs, Scheduler, IAM and Firestore indexes.
+Default schedule remains paused. Not yet implemented: durable resumable-upload
+session persistence, dynamic quota budget, GCS streaming of >1GiB assets,
+end-to-end live Google Cloud verification or a manual review UI.

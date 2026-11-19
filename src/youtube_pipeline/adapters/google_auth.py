@@ -5,6 +5,7 @@ tokens from Secret Manager (not included in this local reference adapter).
 """
 from __future__ import annotations
 
+import json
 import os
 from pathlib import Path
 
@@ -20,6 +21,22 @@ SCOPES = [
 
 
 def credentials(*, interactive: bool = False) -> Credentials:
+    secret_resource = os.getenv("YTP_OAUTH_SECRET_RESOURCE")
+    if secret_resource:
+        if interactive:
+            raise ValueError("interactive OAuth cannot use Secret Manager")
+        if not secret_resource.startswith("projects/") or "/versions/" not in secret_resource:
+            raise ValueError("YTP_OAUTH_SECRET_RESOURCE must be a full Secret Manager version")
+        from google.cloud import secretmanager
+        client = secretmanager.SecretManagerServiceClient()
+        response = client.access_secret_version(request={"name": secret_resource})
+        token = json.loads(response.payload.data.decode("utf-8"))
+        creds = Credentials.from_authorized_user_info(token, SCOPES)
+        if not creds.valid:
+            if not creds.refresh_token:
+                raise RuntimeError("Secret Manager OAuth credential has no refresh_token")
+            creds.refresh(Request())
+        return creds
     path = Path(os.getenv("YTP_TOKEN_FILE", "./secrets/token.json"))
     client = Path(os.getenv("YTP_OAUTH_CLIENT_FILE", "./secrets/client_secret.json"))
     creds = Credentials.from_authorized_user_file(str(path), SCOPES) if path.exists() else None

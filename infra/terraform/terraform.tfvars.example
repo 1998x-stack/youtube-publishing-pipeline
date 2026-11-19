@@ -1,0 +1,8 @@
+project_id = "your-gcp-project-id"
+region = "us-central1"
+image_uri = "us-central1-docker.pkg.dev/your-gcp-project-id/ytp/publisher@sha256:REAL_IMAGE_DIGEST_HERE"
+drive_root_id = "your_google_drive_folder_id"
+youtube_channel_id = "UC_REPLACE_WITH_REAL_CHANNEL_ID"
+namespace = "ytp"
+scheduler_paused = true
+manage_firestore_database = false

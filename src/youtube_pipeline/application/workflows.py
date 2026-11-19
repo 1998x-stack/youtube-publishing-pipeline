@@ -1,6 +1,7 @@
 """Ingestion, upload and reconciliation orchestration."""
 from __future__ import annotations
 
+import os
 import tempfile
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
@@ -8,11 +9,11 @@ from typing import Any
 
 from youtube_pipeline.domain.models import Manifest, ManifestError
 from youtube_pipeline.domain.states import State
-from youtube_pipeline.adapters.persistence.sqlite import SQLiteRepository
+from youtube_pipeline.ports.repository import JobRepository
 from youtube_pipeline.ports.interfaces import AssetStore, Publisher
 
 
-def ingest(store: AssetStore, repo: SQLiteRepository) -> dict[str, Any]:
+def ingest(store: AssetStore, repo: JobRepository) -> dict[str, Any]:
     summary: dict[str, Any] = {"created": 0, "existing": 0, "skipped": 0, "errors": []}
     for asset_key, raw in store.discover():
         try:
@@ -27,7 +28,7 @@ def ingest(store: AssetStore, repo: SQLiteRepository) -> dict[str, Any]:
     return summary
 
 
-def upload_one(repo: SQLiteRepository, store: AssetStore,
+def upload_one(repo: JobRepository, store: AssetStore,
                publisher: Publisher, *, worker_id: str,
                channel_alias: str) -> str | None:
     """One upload with fail-closed handling of ambiguous remote outcomes."""
@@ -51,6 +52,9 @@ def upload_one(repo: SQLiteRepository, store: AssetStore,
             video = files[manifest.data["video_file"]]
             if video.stat().st_size == 0:
                 raise ValueError("empty video file")
+            max_bytes = int(os.getenv("YTP_MAX_VIDEO_BYTES", "1073741824"))
+            if video.stat().st_size > max_bytes:
+                raise ValueError("video exceeds configured maximum size")
             # After this boundary any error can conceal a successful remote upload.
             try:
                 video_id = publisher.upload_private(video, manifest.data)
@@ -70,10 +74,12 @@ def upload_one(repo: SQLiteRepository, store: AssetStore,
     return job.job_id
 
 
-def reconcile(repo: SQLiteRepository, store: AssetStore,
+def reconcile(repo: JobRepository, store: AssetStore,
               publisher: Publisher, *, channel_alias: str) -> dict[str, int]:
     summary = {"checked": 0, "processing": 0, "scheduled": 0, "published": 0,
-               "needs_review": 0, "api_errors": 0}
+               "needs_review": 0, "api_errors": 0,
+               "expired_uploads": repo.mark_expired_uploads_unknown(),
+               "stale_decorating": repo.mark_stale_decorating_for_review()}
     states = (State.UPLOADED, State.PROCESSING, State.SCHEDULED)
     for job in repo.list_jobs(states):
         if job.channel != channel_alias or job.source_type != store.source_type:
@@ -119,7 +125,11 @@ def reconcile(repo: SQLiteRepository, store: AssetStore,
                             error="publish_at is too close or expired")
             summary["needs_review"] += 1
             continue
-        repo.transition(job.job_id, State.DECORATING)
+        try:
+            repo.transition(job.job_id, State.DECORATING)
+        except ValueError:
+            # Another reconciler won the transaction; do not attach twice.
+            continue
         try:
             metadata = Manifest.parse(job.manifest)
             attachments = [name for key in ("thumbnail_file", "subtitle_file")

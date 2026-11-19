@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "youtube-publishing-pipeline"
-version = "0.1.0"
+version = "0.2.0"
 description = "Review-gated Google Drive to YouTube publishing pipeline"
 readme = "README.md"
 requires-python = ">=3.11"
@@ -15,6 +15,8 @@ dependencies = [
   "google-auth-oauthlib>=1.2,<2",
   "jsonschema>=4.20,<5",
   "PyYAML>=6.0,<7",
+  "google-cloud-firestore>=2.19,<3",
+  "google-cloud-secret-manager>=2.20,<3",
 ]
 
 [project.optional-dependencies]

@@ -21,3 +21,17 @@ jobs:
         run: pytest -q
       - name: Bytecode compile
         run: python -m compileall -q src
+
+  terraform:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: '1.10.5'
+      - name: Normalize Terraform formatting
+        run: terraform fmt -recursive infra/terraform
+      - name: Initialize providers without cloud credentials
+        run: terraform -chdir=infra/terraform init -backend=false -input=false
+      - name: Validate HCL and provider schemas
+        run: terraform -chdir=infra/terraform validate -no-color

@@ -3,11 +3,11 @@ from __future__ import annotations
 
 import json
 import sqlite3
-from dataclasses import dataclass
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
 from typing import Any
 
+from youtube_pipeline.domain.jobs import Job, ManifestConflict
 from youtube_pipeline.domain.models import Manifest
 from youtube_pipeline.domain.states import State, require_transition
 
@@ -18,26 +18,6 @@ def utcnow() -> datetime:
 
 def stamp() -> str:
     return utcnow().isoformat()
-
-
-class ManifestConflict(ValueError):
-    """A job ID was reused with different content; explicit review is required."""
-
-
-@dataclass(frozen=True)
-class Job:
-    job_id: str
-    asset_key: str
-    source_type: str
-    channel: str
-    manifest: dict[str, Any]
-    state: State
-    youtube_video_id: str | None
-    attempt_count: int
-    lease_owner: str | None
-    lease_expires_at: str | None
-    scheduled_at: str
-    last_error: str | None
 
 
 class SQLiteRepository:
@@ -235,6 +215,30 @@ class SQLiteRepository:
                       "upload lease expired; inspect YouTube Studio", now, row["job_id"]))
                 self._event(db, row["job_id"], State.UPLOADING,
                             State.UNKNOWN_UPLOAD_RESULT, "expired upload lease")
+                count += 1
+        return count
+
+
+    def mark_stale_decorating_for_review(self, max_age_seconds: int = 7200) -> int:
+        if max_age_seconds <= 0:
+            raise ValueError("max_age_seconds must be positive")
+        cutoff = (utcnow() - timedelta(seconds=max_age_seconds)).isoformat()
+        count = 0
+        with self._connect() as db:
+            db.execute("BEGIN IMMEDIATE")
+            rows = db.execute("""
+                SELECT job_id FROM publish_jobs
+                WHERE state=? AND updated_at < ?
+            """, (State.DECORATING, cutoff)).fetchall()
+            for row in rows:
+                db.execute("""
+                    UPDATE publish_jobs SET state=?, updated_at=?, last_error=?
+                    WHERE job_id=?
+                """, (State.NEEDS_REVIEW, stamp(),
+                      "decoration/schedule outcome unknown; inspect YouTube",
+                      row["job_id"]))
+                self._event(db, row["job_id"], State.DECORATING,
+                            State.NEEDS_REVIEW, "stale decoration")
                 count += 1
         return count
 
