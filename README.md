@@ -42,3 +42,5 @@ Set YTP_DRIVE_ROOT_ID to the folder containing one subfolder per video. Each chi
 - Upload session persistence across crashes is not implemented; affected tasks are quarantined.
 
 CI uses local fake media and a fake publisher. Live OAuth/video processing and real publishing require a separately verified test channel.
+
+Colab handoff script and mounted-Drive instructions: [export guide](docs/colab-export.md).

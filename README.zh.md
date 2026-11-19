@@ -30,3 +30,5 @@
 **安全：** 必须显式审核、确认版权/授权及儿童内容与合成媒体标记。上传结果不明时不自动重传，标记 UNKNOWN_UPLOAD_RESULT。任务 ID 与 manifest 内容固定对应。
 
 **限制：** P0 使用 SQLite（单节点持久化），不提供 Firestore 分布式锁、Secret Manager、Cloud Scheduler 的生产部署，详见 [后续路线](docs/roadmap.md)。
+
+Colab 文件交接说明：[Colab 导出脚本](docs/colab-export.md)。
