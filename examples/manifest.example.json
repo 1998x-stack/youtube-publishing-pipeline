@@ -1,0 +1,21 @@
+{
+  "job_id": "demo-001",
+  "title": "Video publishing demonstration",
+  "description": "Rights-cleared sample video.",
+  "video_file": "video.mp4",
+  "thumbnail_file": "thumbnail.png",
+  "subtitle_file": "subtitles.srt",
+  "subtitle_language": "zh-CN",
+  "tags": [
+    "research",
+    "AI"
+  ],
+  "category_id": "28",
+  "target_channel": "main",
+  "publish_at": "2030-11-21T19:00:00+08:00",
+  "ready": true,
+  "review_approved": true,
+  "rights_confirmed": true,
+  "made_for_kids": false,
+  "contains_synthetic_media": false
+}

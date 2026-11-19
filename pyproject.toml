@@ -1,0 +1,38 @@
+[build-system]
+requires = ["setuptools>=68", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "youtube-publishing-pipeline"
+version = "0.1.0"
+description = "Review-gated Google Drive to YouTube publishing pipeline"
+readme = "README.md"
+requires-python = ">=3.11"
+license = {text = "MIT"}
+dependencies = [
+  "google-api-python-client>=2.100,<3",
+  "google-auth>=2.20,<3",
+  "google-auth-oauthlib>=1.2,<2",
+  "jsonschema>=4.20,<5",
+  "PyYAML>=6.0,<7",
+]
+
+[project.optional-dependencies]
+dev = ["pytest>=8,<10", "ruff>=0.8,<1"]
+
+[project.scripts]
+ytp = "youtube_pipeline.cli:main"
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+addopts = "-q"
+
+[tool.ruff]
+line-length = 100
+target-version = "py311"
+
+[tool.setuptools.package-data]
+"youtube_pipeline" = ["contracts/*.json"]
