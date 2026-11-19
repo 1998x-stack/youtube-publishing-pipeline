@@ -45,17 +45,27 @@ class FakeQuery:
         self.sort_field = None
         self.max_items = None
 
+    def _clone(self):
+        cloned = FakeQuery(self.db, self.collection)
+        cloned.filters = list(self.filters)
+        cloned.sort_field = self.sort_field
+        cloned.max_items = self.max_items
+        return cloned
+
     def where(self, *, filter):
-        self.filters.append(filter)
-        return self
+        cloned = self._clone()
+        cloned.filters.append(filter)
+        return cloned
 
     def order_by(self, field):
-        self.sort_field = field
-        return self
+        cloned = self._clone()
+        cloned.sort_field = field
+        return cloned
 
     def limit(self, amount):
-        self.max_items = amount
-        return self
+        cloned = self._clone()
+        cloned.max_items = amount
+        return cloned
 
     def stream(self):
         pairs = list(self.db.data.get(self.collection, {}).items())

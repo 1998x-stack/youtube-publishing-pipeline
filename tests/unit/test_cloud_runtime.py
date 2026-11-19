@@ -28,15 +28,13 @@ def test_secret_manager_credentials_read_without_file_writes(monkeypatch, tmp_pa
     monkeypatch.setenv("YTP_TOKEN_FILE", str(token))
     from google.cloud import secretmanager
 
-    class Response:
-        class Payload:
-            data = json.dumps(data).encode()
-        payload = Payload()
+    from types import SimpleNamespace
+    response = SimpleNamespace(payload=SimpleNamespace(data=json.dumps(data).encode()))
 
     class FakeSecretClient:
         def access_secret_version(self, request):
             assert request["name"].endswith("/versions/latest")
-            return Response()
+            return response
 
     class FakeCredentials:
         valid = True
