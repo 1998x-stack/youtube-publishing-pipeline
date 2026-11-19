@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 import json
+import os
 import shutil
 from pathlib import Path
 from typing import Any, Iterable
@@ -36,6 +37,10 @@ class LocalAssetStore:
             if not source.is_file() or source.is_symlink() or source.resolve().parent != folder:
                 raise FileNotFoundError(source)
             dest = target / name
+            if source.suffix.lower() == ".mp4":
+                limit = int(os.getenv("YTP_MAX_VIDEO_BYTES", "1073741824"))
+                if source.stat().st_size > limit:
+                    raise ValueError("Local video too large for configured runtime limit")
             with source.open("rb") as src, dest.open("wb") as out:
                 shutil.copyfileobj(src, out, length=8 * 1024 * 1024)
             result[name] = dest

@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 import json
+import os
 from pathlib import Path
 from typing import Any, Iterable
 
@@ -70,6 +71,10 @@ class DriveAssetStore:
             if name not in files or files[name]["mimeType"] == "application/vnd.google-apps.folder":
                 raise FileNotFoundError(f"Drive asset {asset_key}/{name}")
             path = target / name
+            if files[name].get("mimeType", "").startswith("video/"):
+                limit = int(os.getenv("YTP_MAX_VIDEO_BYTES", "1073741824"))
+                if int(files[name].get("size", "0")) > limit:
+                    raise ValueError("Drive video too large for configured runtime limit")
             self._download(files[name]["id"], path)
             result[name] = path
         return result

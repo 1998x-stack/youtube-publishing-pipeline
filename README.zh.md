@@ -1,6 +1,6 @@
 # YouTube Publishing Pipeline｜YouTube 自动上传与排期
 
-**P0 已实现代码，但尚未配置无人值守云端部署。**
+**P1 已实现 Firestore、Secret Manager 接入和 Cloud Run/Scheduler 部署代码；真实 GCP 环境尚未部署。**
 
 流程：Colab 生产视频 → Google Drive 存放 MP4/封面/字幕/manifest → 校验和人工审核 → YouTube 私享上传 → 等待处理 → 预约公开 → 记录状态。
 
@@ -32,3 +32,7 @@
 **限制：** P0 使用 SQLite（单节点持久化），不提供 Firestore 分布式锁、Secret Manager、Cloud Scheduler 的生产部署，详见 [后续路线](docs/roadmap.md)。
 
 Colab 文件交接说明：[Colab 导出脚本](docs/colab-export.md)。
+
+## P1 云端部署
+
+新增 Firestore 事务任务队列、Secret Manager 凭据读取、Cloud Run Jobs 和 Cloud Scheduler 的 Terraform 定义。默认定时任务为暂停状态，**不会自行开始公开上传**。部署前需提供你自己的 GCP 项目、OAuth 用户授权和已推送的镜像，并检查云资源费用。详见 [部署步骤](docs/cloud-deployment.md) 与 [P1 验收矩阵](docs/p1-verification.md)。
